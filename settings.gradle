@@ -1,0 +1,2 @@
+include ':app', ':lib-annotation', ':lib-navcompiler', ':lib-network', ':lib-common'
+rootProject.name='MJetpack'
