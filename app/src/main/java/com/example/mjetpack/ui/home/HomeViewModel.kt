@@ -31,29 +31,59 @@ class HomeViewModel : AbsViewModel<Feed>() {
         return cacheLiveData
     }
 
-    val mDataSource:DataSource<Int,Feed> = object :ItemKeyedDataSource<Int,Feed>(){
+    inner class FeedDataSource : ItemKeyedDataSource<Int, Feed>() {
         override fun loadInitial(
             params: LoadInitialParams<Int>,
             callback: LoadInitialCallback<Feed>
-        ) {
-            loadData(0,params.requestedLoadSize,callback)
+        ) { //加载初始化数据的
+            Log.e("homeviewmodel", "loadInitial: ")
+            loadData(0, params.requestedLoadSize, callback)
             witchCache = false
         }
 
-        override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Feed>) {
-            loadData(params.key,params.requestedLoadSize,callback)
+        override fun loadAfter(
+            params: LoadParams<Int>,
+            callback: LoadCallback<Feed>
+        ) { //向后加载分页数据的
+            Log.e("homeviewmodel", "loadAfter: ")
+            loadData(params.key, params.requestedLoadSize, callback)
         }
 
-        override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Feed>) {
-            callback.onResult(Collections.emptyList())
-
+        override fun loadBefore(
+            params: LoadParams<Int>,
+            callback: LoadCallback<Feed>
+        ) {
+            callback.onResult(kotlin.collections.emptyList())
+            //能够向前加载数据的
         }
 
         override fun getKey(item: Feed): Int {
             return item.id
         }
-
     }
+//    val mDataSource:DataSource<Int,Feed> = object :ItemKeyedDataSource<Int,Feed>(){
+//        override fun loadInitial(
+//            params: LoadInitialParams<Int>,
+//            callback: LoadInitialCallback<Feed>
+//        ) {
+//            loadData(0,params.requestedLoadSize,callback)
+//            witchCache = false
+//        }
+//
+//        override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Feed>) {
+//            loadData(params.key,params.requestedLoadSize,callback)
+//        }
+//
+//        override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Feed>) {
+//            callback.onResult(Collections.emptyList())
+//
+//        }
+//
+//        override fun getKey(item: Feed): Int {
+//            return item.id
+//        }
+//
+//    }
 
     private fun loadData(key: Int,count:Int, callback: ItemKeyedDataSource.LoadCallback<Feed>) {
 //feeds/queryHotFeedsList
@@ -107,7 +137,7 @@ class HomeViewModel : AbsViewModel<Feed>() {
     }
 
     override fun createDataSource(): DataSource<Int,Feed> {
-        return mDataSource
+        return FeedDataSource()
     }
 
     fun loadAfter(id: Int, callback: ItemKeyedDataSource.LoadCallback<Feed>) {
