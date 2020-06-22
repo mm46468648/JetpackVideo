@@ -26,6 +26,7 @@ class HomeViewModel : AbsViewModel<Feed>() {
     private var witchCache = true
     private val cacheLiveData = MutableLiveData<PagedList<Feed>>()
     private val loadAfter = AtomicBoolean(false)
+    private var mFeedType: String? = null
 
     fun getCacheLiveData(): MutableLiveData<PagedList<Feed>>{
         return cacheLiveData
@@ -92,7 +93,7 @@ class HomeViewModel : AbsViewModel<Feed>() {
             loadAfter.set(true)
         }
         val request = ApiService.get<Any>("/feeds/queryHotFeedsList")
-            .addParam("feedType", null)
+            .addParam("feedType", mFeedType)
             .addParam("userId", UserManager.get().userId)
             .addParam("feedId", key)
             .addParam("pageCount", 10)
@@ -136,6 +137,9 @@ class HomeViewModel : AbsViewModel<Feed>() {
 
     }
 
+    fun setFeedType(feedType: String) {
+        mFeedType = feedType
+    }
     override fun createDataSource(): DataSource<Int,Feed> {
         return FeedDataSource()
     }

@@ -27,9 +27,9 @@ public class UserManager {
 
     private UserManager() {
 
-        mUser = new User();
-        mUser.userId = 19930521;
-        mUser.name = "mm";
+//        mUser = new User();
+//        mUser.userId = 19930521;
+//        mUser.name = "mm";
 
         User cache = (User) CacheManager.getCache(KEY_CACHE_USER);
         if (cache != null && cache.expires_time > System.currentTimeMillis()) {

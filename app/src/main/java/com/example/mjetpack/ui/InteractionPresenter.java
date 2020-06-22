@@ -17,6 +17,7 @@ import com.example.lib_common.global.AppGlobals;
 import com.example.lib_network.ApiResponse;
 import com.example.lib_network.ApiService;
 import com.example.lib_network.JsonCallback;
+import com.example.mjetpack.extention.LiveDataBus;
 import com.example.mjetpack.model.Comment;
 import com.example.mjetpack.model.Feed;
 import com.example.mjetpack.model.TagList;
@@ -61,8 +62,8 @@ public class InteractionPresenter {
                         if (response.body != null) {
                             boolean hasLiked = response.body.getBoolean("hasLiked").booleanValue();
                             feed.getUgc().setHasLiked(hasLiked);
-//                            LiveDataBus.get().with(DATA_FROM_INTERACTION)
-//                                    .postValue(feed);
+                            LiveDataBus.get().with(DATA_FROM_INTERACTION)
+                                    .postValue(feed);
                         }
                     }
 
@@ -198,8 +199,8 @@ public class InteractionPresenter {
                         if (response.body != null) {
                             boolean hasFavorite = response.body.getBooleanValue("hasFavorite");
                             feed.getUgc().setHasFavorite(hasFavorite);
-//                            LiveDataBus.get().with(DATA_FROM_INTERACTION)
-//                                    .postValue(feed);
+                            LiveDataBus.get().with(DATA_FROM_INTERACTION)
+                                    .postValue(feed);
                         }
                     }
 
@@ -211,40 +212,6 @@ public class InteractionPresenter {
     }
 
 
-    //关注/取消关注一个用户
-    public static void toggleFollowUser(LifecycleOwner owner, Feed feed) {
-        if (!isLogin(owner, new Observer<User>() {
-            @Override
-            public void onChanged(User user) {
-                toggleFollowUser(feed);
-            }
-        })) {
-        } else {
-            toggleFollowUser(feed);
-        }
-    }
-
-    private static void toggleFollowUser(Feed feed) {
-        ApiService.get("/ugc/toggleUserFollow")
-                .addParam("followUserId", UserManager.get().getUserId())
-                .addParam("userId", feed.author.userId)
-                .execute(new JsonCallback<JSONObject>() {
-                    @Override
-                    public void onSuccess(ApiResponse<JSONObject> response) {
-                        if (response.body != null) {
-                            boolean hasFollow = response.body.getBooleanValue("hasLiked");
-//                            feed.getAuthor().setHasFollow(hasFollow);
-//                            LiveDataBus.get().with(DATA_FROM_INTERACTION)
-//                                    .postValue(feed);
-                        }
-                    }
-
-                    @Override
-                    public void onError(ApiResponse<JSONObject> response) {
-                        showToast(response.message);
-                    }
-                });
-    }
 
     public static LiveData<Boolean> deleteFeed(Context context, long itemId) {
         MutableLiveData<Boolean> liveData = new MutableLiveData<>();
@@ -332,7 +299,7 @@ public class InteractionPresenter {
                     public void onSuccess(ApiResponse<JSONObject> response) {
                         if (response.body != null) {
                             Boolean follow = response.body.getBoolean("hasFollow");
-//                            tagList.setHasFollow(follow);
+                            tagList.setHasFollow(follow);
                         }
                     }
 
@@ -377,6 +344,41 @@ public class InteractionPresenter {
                 }
             }
         };
+    }
+
+    //关注/取消关注一个用户
+    public static void toggleFollowUser(LifecycleOwner owner, Feed feed) {
+        if (!isLogin(owner, new Observer<User>() {
+            @Override
+            public void onChanged(User user) {
+                toggleFollowUser(feed);
+            }
+        })) {
+        } else {
+            toggleFollowUser(feed);
+        }
+    }
+
+    private static void toggleFollowUser(Feed feed) {
+        ApiService.get("/ugc/toggleUserFollow")
+                .addParam("followUserId", UserManager.get().getUserId())
+                .addParam("userId", feed.author.userId)
+                .execute(new JsonCallback<JSONObject>() {
+                    @Override
+                    public void onSuccess(ApiResponse<JSONObject> response) {
+                        if (response.body != null) {
+                            boolean hasFollow = response.body.getBooleanValue("hasLiked");
+                            feed.getAuthor().setHasFollow(hasFollow);
+                            LiveDataBus.get().with(DATA_FROM_INTERACTION)
+                                    .postValue(feed);
+                        }
+                    }
+
+                    @Override
+                    public void onError(ApiResponse<JSONObject> response) {
+                        showToast(response.message);
+                    }
+                });
     }
 
 }

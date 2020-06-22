@@ -33,7 +33,7 @@ public abstract class AbsListFragment<T,M extends AbsViewModel<T>> extends Fragm
     protected RecyclerView mRecyclerView;
     protected SmartRefreshLayout mRefreshLayout;
     protected EmptyView mEmptyView;
-    protected PagedListAdapter<T,RecyclerView.ViewHolder> adapter;
+    protected PagedListAdapter<T,? extends RecyclerView.ViewHolder> adapter;
     protected DividerItemDecoration decoration;
     protected M mViewModel;
 
@@ -117,6 +117,6 @@ public abstract class AbsListFragment<T,M extends AbsViewModel<T>> extends Fragm
         }
     }
 
-    public abstract PagedListAdapter<T, RecyclerView.ViewHolder> getAdapter();
+    public abstract PagedListAdapter<T, ? extends RecyclerView.ViewHolder> getAdapter();
 
 }

@@ -1,33 +1,80 @@
 package com.example.mjetpack.ui.home
 
+import android.os.Bundle
+import android.util.Log
 import androidx.lifecycle.Observer
 import androidx.paging.ItemKeyedDataSource
 import androidx.paging.PagedList
 import androidx.paging.PagedListAdapter
-import androidx.recyclerview.widget.RecyclerView
 import com.example.lib_annotation.FragmentDestination
+import com.example.mjetpack.exoplayer.PageListPlayDetector
+import com.example.mjetpack.exoplayer.PageListPlayManager
 import com.example.mjetpack.model.Feed
 import com.example.mjetpack.ui.AbsListFragment
 import com.example.mjetpack.ui.MutablePageKeyedDataSource
 import com.scwang.smartrefresh.layout.api.RefreshLayout
 
 
-@FragmentDestination(pageUrl = "main/tabs/home",asStarter = true)
-class HomeFragment : AbsListFragment<Feed,HomeViewModel>() {
+@FragmentDestination(pageUrl = "main/tabs/home", asStarter = true)
+class HomeFragment : AbsListFragment<Feed, HomeViewModel>() {
+
+    private var playDetector: PageListPlayDetector? = null
+    private var shouldPause = true
+
+    companion object {
+        fun newInstance(feedType: String?): HomeFragment? {
+            val args = Bundle()
+            args.putString("feedType", feedType)
+            val fragment = HomeFragment()
+            fragment.arguments = args
+            return fragment
+        }
+    }
 
     override fun afterCreateView() {
 
-        mViewModel.getCacheLiveData().observe(this,object : Observer<PagedList<Feed>> {
+        mViewModel.getCacheLiveData().observe(this, object : Observer<PagedList<Feed>> {
             override fun onChanged(result: PagedList<Feed>) {
                 //只有当新数据集合大于0 的时候，才调用adapter.submitList
 //否则可能会出现 页面----有数据----->被清空-----空布局
                 submitList(result)
             }
         })
+        playDetector = PageListPlayDetector(this, mRecyclerView)
+        mViewModel.setFeedType(feedType)
     }
-    override fun getAdapter(): PagedListAdapter<Feed, RecyclerView.ViewHolder> {
-        val feedType = if (arguments == null) "all" else arguments!!.getString("feedType")
-        return FeedAdapter(this.requireContext(),feedType!!) as PagedListAdapter<Feed, RecyclerView.ViewHolder>
+
+    var feedType = "all"
+    override fun getAdapter(): PagedListAdapter<Feed, FeedAdapter.ViewHolder> {
+        feedType = if (arguments == null) "all" else arguments!!.getString("feedType") ?: "all"
+        return object : FeedAdapter(context, feedType) {
+            override fun onViewAttachedToWindow2(holder: ViewHolder) {
+                if (holder.isVideoItem) {
+                    playDetector!!.addTarget(holder.getListPlayerView())
+                }
+            }
+
+            override fun onViewDetachedFromWindow2(holder: ViewHolder) {
+                playDetector!!.removeTarget(holder.getListPlayerView())
+            }
+
+            override fun onStartFeedDetailActivity(feed: Feed) {
+                val isVideo = feed.itemType === Feed.TYPE_VIDEO
+                shouldPause = !isVideo
+            }
+
+            override fun onCurrentListChanged(
+                previousList: PagedList<Feed?>?,
+                currentList: PagedList<Feed?>?
+            ) { //这个方法是在我们每提交一次 pagelist对象到adapter 就会触发一次
+//每调用一次 adpater.submitlist
+                if (previousList != null && currentList != null) {
+                    if (!currentList.containsAll(previousList)) {
+                        mRecyclerView.scrollToPosition(0)
+                    }
+                }
+            }
+        }
     }
 
     override fun onLoadMore(refreshLayout: RefreshLayout) {
@@ -38,7 +85,7 @@ class HomeFragment : AbsListFragment<Feed,HomeViewModel>() {
             return
         }
         val feed: Feed? = currentList?.get(adapter.itemCount - 1)
-        mViewModel.loadAfter(feed?.id?:0, object : ItemKeyedDataSource.LoadCallback<Feed>() {
+        mViewModel.loadAfter(feed?.id ?: 0, object : ItemKeyedDataSource.LoadCallback<Feed>() {
             override fun onResult(data: List<Feed>) {
                 val config: PagedList.Config = currentList?.getConfig()!!
                 if (data != null && data.size > 0) { //这里 咱们手动接管 分页数据加载的时候 使用MutableItemKeyedDataSource也是可以的。
@@ -64,5 +111,47 @@ class HomeFragment : AbsListFragment<Feed,HomeViewModel>() {
         mViewModel.dataSource.invalidate()
     }
 
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        if (hidden) {
+            playDetector!!.onPause()
+        } else {
+            playDetector!!.onResume()
+        }
+    }
+
+    override fun onPause() { //如果是跳转到详情页,咱们就不需要 暂停视频播放了
+//如果是前后台切换 或者去别的页面了 都是需要暂停视频播放的
+        if (shouldPause) {
+            playDetector!!.onPause()
+        }
+        Log.e("homefragment", "onPause: feedtype:$feedType")
+        super.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        shouldPause = true
+        //由于沙发Tab的几个子页面 复用了HomeFragment。
+//我们需要判断下 当前页面 它是否有ParentFragment.
+//当且仅当 它和它的ParentFragment均可见的时候，才能恢复视频播放
+        if (parentFragment != null) {
+            if (parentFragment!!.isVisible && isVisible) {
+                Log.e("homefragment", "onResume: feedtype:$feedType")
+                playDetector!!.onResume()
+            }
+        } else {
+            if (isVisible) {
+                Log.e("homefragment", "onResume: feedtype:$feedType")
+                playDetector!!.onResume()
+            }
+        }
+    }
+
+
+    override fun onDestroy() { //记得销毁
+        PageListPlayManager.release(feedType)
+        super.onDestroy()
+    }
 
 }

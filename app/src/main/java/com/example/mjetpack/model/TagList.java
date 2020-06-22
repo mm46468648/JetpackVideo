@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
 import androidx.databinding.BaseObservable;
+import androidx.databinding.Bindable;
 
 import java.io.Serializable;
 
@@ -54,13 +55,13 @@ public class TagList extends BaseObservable implements Serializable {
                 && hasFollow == newOne.hasFollow;
     }
 
-//    @Bindable
-//    public boolean isHasFollow() {
-//        return hasFollow;
-//    }
-//
-//    public void setHasFollow(boolean follow) {
-//        this.hasFollow = follow;
-//        notifyPropertyChanged(com.mooc.ppjoke.BR._all);
-//    }
+    @Bindable
+    public boolean isHasFollow() {
+        return hasFollow;
+    }
+
+    public void setHasFollow(boolean follow) {
+        this.hasFollow = follow;
+        notifyPropertyChanged(com.example.mjetpack.BR._all);
+    }
 }

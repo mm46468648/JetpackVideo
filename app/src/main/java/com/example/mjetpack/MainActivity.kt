@@ -67,4 +67,19 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
         navController.navigate(menuItem.itemId)
         return menuItem.title.isNotEmpty()
     }
+
+    override fun onBackPressed() { //        boolean shouldIntercept = false;
+//
+//当前正在显示的页面destinationId
+        val currentPageId = navController.currentDestination!!.id
+        //APP页面路导航结构图  首页的destinationId
+        val homeDestId = navController.graph.startDestination
+        //如果当前正在显示的页面不是首页，而我们点击了返回键，则拦截。
+        if (currentPageId != homeDestId) {
+            nav_view.setSelectedItemId(homeDestId)
+            return
+        }
+        //否则 finish，此处不宜调用onBackPressed。因为navigation会操作回退栈,切换到之前显示的页面。
+        finish()
+    }
 }
